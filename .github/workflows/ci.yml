@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: 安装依赖
@@ -27,11 +27,12 @@ jobs:
       - name: 类型检查
         run: pnpm run typecheck
 
-      - name: 单元 / 集成 / 界面测试
-        run: pnpm test
-
+      # 先构建：这样测试阶段能顺带验证「双击即用」的单文件产物
       - name: 构建单文件产物
         run: pnpm run build
+
+      - name: 单元 / 集成 / 界面 / 全链路测试
+        run: pnpm test
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4

@@ -54,7 +54,8 @@
 
 ### 方式 A：自动发现（推荐）
 
-在**任意一台**机器上（Windows / macOS / Linux 都行，只要装了 Node 18+）：
+在**任意一台**机器上（Windows / macOS / Linux 都行，需要 Node 22+；服务端本身只用 Node 内置模块，
+但仓库的构建与测试基线是 Node 22）：
 
 ```bash
 git clone https://github.com/wuge2019/lan-direct-transfer.git
