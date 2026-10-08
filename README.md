@@ -19,6 +19,12 @@
 
 方式 A 里的服务只做两件事：**告诉你有谁在线**、**把你俩建立直连所需的那一小段信令转给对方**。
 它不接触聊天内容，也不接触文件数据（可从 [协议](#8-自动发现与信令服务) 一节逐条核对）。
+这个服务有两个**功能等价、协议相同**的实现，任选其一：
+
+| 后端 | 适合 | 依赖 |
+| --- | --- | --- |
+| **Node**（`server/`） | 已经装了 Node 的机器，`pnpm lan` 一条命令 | Node 22+，零运行时依赖 |
+| **Go**（`server-go/`） | 想拷一个单文件可执行程序就跑（甚至没装 Node） | 只需 `go build`（只用标准库，可离线） |
 
 技术栈：**Vue 3 + Vite + TypeScript**（Composition API、单文件组件）。
 
@@ -83,6 +89,21 @@ pnpm lan --no-open                            # 不自动打开浏览器
 
 > 服务本身不存储任何东西，按 `Ctrl+C` 停掉即全部消失；它只服务局域网，默认拒绝陌生
 > Origin 的连接（详见 [第 8 节](#8-自动发现与信令服务)）。
+
+### 方式 A′：用 Go 版后端（同一个协议，单个可执行文件）
+
+不想在服务机上装 Node？用 Go 版，功能与行为完全一致：
+
+```bash
+cd server-go
+go build -o lan-server .        # 只用标准库，可离线构建
+./lan-server -port 8080 -name "会议室传输房"
+```
+
+或者直接用 CI 构建好的二进制：在 GitHub 的 **Actions → 最新一次 CI → Artifacts** 里
+下载 `lan-server-linux-amd64`（Windows/macOS 请自行 `go build`，一条命令即可）。
+
+前端页面两边通用，不需要任何改动；详见 [server-go/README.md](server-go/README.md)。
 
 ### 方式 B：纯前端单文件（零依赖）
 
@@ -164,13 +185,22 @@ pnpm preview --host  # 预览构建产物
 ## 5. 常用命令
 
 ```bash
-pnpm lan          # 启动局域网发现/信令服务（方式 A，默认 8080，自动打开浏览器）
+pnpm lan          # 启动 Node 版发现/信令服务（方式 A，默认 8080，自动打开浏览器）
 pnpm dev          # 开发服务器（热更新）
 pnpm build        # 构建单文件产物 dist/index.html
 pnpm preview      # 预览构建产物
 pnpm typecheck    # vue-tsc 类型检查
-pnpm test         # vitest：协议 / 传输引擎 / 界面 / 全链路测试
+pnpm test         # vitest：协议 / 传输引擎 / 界面 / 全链路测试（含针对 Go 后端的交叉验证）
 pnpm test:watch   # 监听模式
+```
+
+Go 版后端：
+
+```bash
+cd server-go
+go vet ./...      # 静态检查
+go test ./...     # Go 单元测试
+go build -o lan-server .
 ```
 
 `pnpm lan` 的完整参数：
@@ -195,9 +225,15 @@ node server/index.mjs [选项]
 ├─ vite.config.ts             Vite 配置：单文件构建 + 把 module script 改成普通 script
 ├─ LICENSE                    MIT 许可证
 ├─ .github/workflows/ci.yml   CI：类型检查 + 测试 + 构建
-├─ server                     （方式 A）局域网发现与信令服务，零运行时依赖
+├─ server                     （方式 A）Node 版发现与信令服务，零运行时依赖
 │  ├─ index.mjs               HTTP 静态托管 + /api/info + 在线名单 + 请求/同意 + 信令转发
 │  └─ websocket.mjs           自写的极简 WebSocket 服务端（RFC 6455 子集）
+├─ server-go                  （方式 A）Go 版实现，同一套协议，零第三方依赖
+│  ├─ main.go                 CLI、监听与端口回退、Origin 校验、打开浏览器
+│  ├─ hub.go                  在线名单与信令协议（与 Node 版逐条对应）
+│  ├─ websocket.go            自写的极简 WebSocket 服务端（RFC 6455 子集）
+│  ├─ static.go               /api/info、SPA 兜底、目录穿越防护
+│  └─ *_test.go               Go 单元测试（握手/分片/协议/静态托管）
 ├─ src
 │  ├─ main.ts                 挂载应用
 │  ├─ App.vue                 整体布局、全局拖拽、启动发现服务、卸载清理
@@ -317,8 +353,27 @@ node server/index.mjs [选项]
 
 - **默认只接受同源与本机 Origin 的 WebSocket 连接**：其他网站即使知道你的地址也无法连上来
   （浏览器会带上 `Origin`，服务端据此校验）。确实需要跨源时用 `--allow-origin <主机>` 显式放行。
+- 单文件版用 `file://` 打开时，浏览器给出的 `Origin` 是字符串 `"null"`，服务端同样放行，
+  这样「单文件版 + 在设置里填服务地址」也能用上自动发现。
 - 服务只监听局域网地址；不要把它暴露到公网（本项目没有做鉴权与加密传输，设计前提就是可信局域网）。
 - 连接建立后，双方的直连由 WebRTC 的 DTLS 加密保护。
+
+### 两个实现（Node / Go）
+
+两份代码是**同一个协议的两套独立实现**，可以任选其一，也可以混用（比如服务端跑 Go，
+客户端在 Node 构建的前端页面上）：
+
+| | Node（`server/`） | Go（`server-go/`） |
+| --- | --- | --- |
+| 启动 | `pnpm lan` | `go build -o lan-server . && ./lan-server` |
+| 运行时依赖 | 无（自带极简 WebSocket 实现） | 无（**只用标准库**，可离线构建） |
+| 分发形态 | 需要 Node 22+ | 单个可执行文件（Windows 约 9 MB） |
+| HTTP 接口 | `/api/info`、`/ws`、静态托管 | 完全相同 |
+| 协议 | `protocol = 1` | `protocol = 1` |
+
+等价性不是「看着像」，而是有测试兜底：`tests/go-server.spec.ts` 会用**前端真实的客户端代码**
+（`src/lib/discovery.ts` + Node 内置 WebSocket）与**真实 WebRTC 协议栈**（node-datachannel）
+去打 Go 服务，跑「发现 → 点选 → 同意 → 握手 → 真实传完 1.5 MB 并校验 CRC」的完整链路。
 
 ---
 
@@ -379,17 +434,18 @@ node server/index.mjs [选项]
 ## 11. 测试
 
 ```bash
-pnpm test
+pnpm test          # 前端 / 协议 / 全链路（95 个用例，10 个文件）
+cd server-go && go test ./...   # Go 后端（28 个用例）
 ```
 
-覆盖内容（`pnpm test` → 9 个文件、88 个用例，全部使用真实实现而非桩）：
+全部使用真实实现而非桩，覆盖内容：
 
 - `tests/crc32.spec.ts`：CRC-32 已知向量、增量与一次性计算一致性、比特翻转可检出、格式化工具
 - `tests/sdp-codec.spec.ts`：SDP 解析、候选过滤（去 TCP/relay）、短码打包/解包往返、
   容忍换行与包裹文字、还原后的 SDP 可再次解析、非法输入报错
 - `tests/peer.spec.ts`：信令码角色校验（把应答码当邀请码粘贴会被拦下）、
   DTLS 指纹算法随码携带与向后兼容
-- `tests/server.spec.ts`：**发现/信令服务**（自写的 WebSocket 实现）——握手 101/403、
+- `tests/server.spec.ts`：**Node 版发现/信令服务**（自写的 WebSocket 实现）——握手 101/403/`null`、
   注册与在线名单、改名广播、请求/同意/拒绝、未配对者不能转发信令、忙时拒新请求、
   离线清理、非法消息容错、`/api/info`、目录穿越防护
 - `tests/discovery.spec.ts`：**发现客户端**接真实服务 —— 探测接口、名单、请求/同意、
@@ -400,19 +456,23 @@ pnpm test
   **通道未就绪时排队项必须进入终态**、**abortAll 要收敛排队项**、**终态不能被覆盖**、
   **发送端失败要通知接收端**、**超大 credit 限幅**、
   **取消后立刻发新文件不被旧的在途分片污染**
-- `tests/full-stack.spec.ts`：**全链路**——发现服务 + 发现客户端 + 真实 WebRTC 协议栈：
+- `tests/full-stack.spec.ts`：**全链路（Node 后端）**——发现服务 + 发现客户端 + 真实 WebRTC：
   甲点选乙 → 乙同意 → 自动完成握手 → 真实传完 1.5 MB 并通过 CRC 校验；以及拒绝时不会建立直连
+- `tests/go-server.spec.ts`：**交叉实现验证**——用前端真实客户端与真实 WebRTC 协议栈去打
+  **Go 后端**，跑通 `/api/info`、名单、改名、请求/同意/拒绝、双向信令、越权防护，
+  以及完整的上传链路（本机没有 Go 工具链时自动跳过）
 - `tests/webrtc.e2e.spec.ts`：**真实 WebRTC 协议栈端到端**（Node + libdatachannel）——
   用本项目生成的邀请码 / 应答码完成真实握手，并在真实 DataChannel 上按真实分片协议传完 1.5 MB 文件；
-  另有一条负向对照：**篡改 DTLS 指纹后握手必须失败**，证明测试不是空跑。
-  （若本机没有可用的 `node-datachannel` 原生二进制，该文件会自动跳过）
+  另有一条负向对照：**篡改 DTLS 指纹后握手必须失败**，证明测试不是空跑
+- `server-go/*_test.go`（Go 侧）：握手与帧协议（掩码、分片、大帧、超长拒绝、ping/pong）、
+  在线名单、改名、请求/同意/拒绝、越权防护、顶号、静态托管、`/api/info`、目录穿越防护
 - `tests/app.smoke.spec.ts`：用 jsdom 挂载真实 `App.vue`（在线名单渲染、连接按钮可用性、
   设置弹窗、拖拽遮罩、输入法回车、清空逻辑），并用 JSDOM **忠实解析 `dist/index.html`**、
   执行其中的内联脚本，断言界面真的渲染出来，验证「双击即用」的单文件产物确实能启动
 
 > 特别说明：手写 SDP 与手写 WebSocket 是本项目里最容易出错的两块
-> （自往返测试只能证明自洽，不能证明合法）。因此分别补了**真实 WebRTC 协议栈**
-> 与**全链路**两条端到端测试来兜底。
+> （自往返测试只能证明自洽，不能证明合法）。因此分别补了**真实 WebRTC 协议栈**、
+> **全链路**与**跨后端交叉验证**三类端到端测试来兜底。
 > 注意：`app.smoke.spec.ts` 里针对构建产物的用例需要先执行过 `pnpm build`（未构建时自动跳过）。
 
 ---

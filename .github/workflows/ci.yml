@@ -21,6 +21,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # Go 用于：1) 单独测 Go 版后端；2) 前端测试里交叉验证 Go 后端（tests/go-server.spec.ts）
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: false # 本项目 Go 侧零第三方依赖，没有 go.sum
+
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
@@ -31,12 +37,31 @@ jobs:
       - name: 构建单文件产物
         run: pnpm run build
 
-      - name: 单元 / 集成 / 界面 / 全链路测试
+      - name: Go 静态检查
+        working-directory: server-go
+        run: go vet ./...
+
+      - name: Go 单元测试
+        working-directory: server-go
+        run: go test ./...
+
+      - name: 构建 Go 服务端（单文件可执行程序）
+        working-directory: server-go
+        run: go build -o ../dist-go/lan-server .
+
+      - name: 前端单元 / 集成 / 界面 / 全链路测试
         run: pnpm test
 
-      - name: 上传构建产物
+      - name: 上传前端单文件产物
         uses: actions/upload-artifact@v4
         with:
           name: lan-direct-transfer-single-file
           path: dist/index.html
+          if-no-files-found: error
+
+      - name: 上传 Go 服务端（linux-amd64）
+        uses: actions/upload-artifact@v4
+        with:
+          name: lan-server-linux-amd64
+          path: dist-go/lan-server
           if-no-files-found: error

@@ -425,7 +425,10 @@ export async function createLanServer(userOptions = {}) {
 
     return (req) => {
       const origin = req.headers.origin
-      if (!origin) return true // 非浏览器客户端（curl / 测试）没有 Origin
+      // 没有 Origin（curl / 测试客户端）直接放行；
+      // 单文件版用 file:// 打开时 Origin 是字符串 "null"，也放行，
+      // 否则「单文件版 + 在设置里填服务地址」这条用法会失效。
+      if (!origin || origin === 'null') return true
       try {
         const host = new URL(origin).hostname
         if (allowed.has(host)) return true

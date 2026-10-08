@@ -382,6 +382,12 @@ describe('WebSocket 握手防护', () => {
     const raw = await rawHandshake(server.port, `http://127.0.0.1:${server.port}`)
     expect(raw).toContain('101')
   })
+
+  it('单文件版（Origin: null）的握手被接受，便于静态页面连本服务', async () => {
+    const server = await startServer()
+    const raw = await rawHandshake(server.port, 'null')
+    expect(raw).toContain('101')
+  })
 })
 
 /** 手工发一次 WebSocket 握手，返回响应头文本 */
