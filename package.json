@@ -1,7 +1,7 @@
 {
   "name": "lan-direct-transfer",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "纯前端局域网通信 + 文件实时传输（WebRTC DataChannel，无后端，Vue 3 + Vite）",
   "author": "Lyu <tomcat.888@qq.com>",

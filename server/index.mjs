@@ -27,7 +27,7 @@ import { spawn } from 'node:child_process'
 import { attachWebSocketServer } from './websocket.mjs'
 
 export const PROTOCOL_VERSION = 1
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.1.0'
 
 const MAX_NAME_LENGTH = 24
 const MAX_PEER_ID_LENGTH = 64

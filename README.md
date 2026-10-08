@@ -100,8 +100,13 @@ go build -o lan-server .        # 只用标准库，可离线构建
 ./lan-server -port 8080 -name "会议室传输房"
 ```
 
-或者直接用 CI 构建好的二进制：在 GitHub 的 **Actions → 最新一次 CI → Artifacts** 里
-下载 `lan-server-linux-amd64`（Windows/macOS 请自行 `go build`，一条命令即可）。
+也可以直接下载编译好的单文件可执行程序（无需 Go 环境，双击/命令行都能跑）：
+
+| 平台 | 下载 |
+| --- | --- |
+| Windows x64 | [`lan-server-windows-amd64.exe`](https://github.com/wuge2019/lan-direct-transfer/releases/latest) |
+| Linux x64 | [`lan-server-linux-amd64`](https://github.com/wuge2019/lan-direct-transfer/releases/latest) |
+| macOS (Apple Silicon) | [`lan-server-darwin-arm64`](https://github.com/wuge2019/lan-direct-transfer/releases/latest) |
 
 前端页面两边通用，不需要任何改动；详见 [server-go/README.md](server-go/README.md)。
 

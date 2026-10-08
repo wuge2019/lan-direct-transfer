@@ -19,7 +19,7 @@ import (
 
 const (
 	protocolVersion = 1
-	appVersion      = "1.0.0"
+	appVersion      = "1.1.0"
 
 	maxNameRunes    = 24
 	maxPeerIDLength = 64
