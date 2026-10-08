@@ -1,5 +1,6 @@
 # 局域网直连 · 通信与文件实时传输
 
+[![CI](https://github.com/wuge2019/lan-direct-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/wuge2019/lan-direct-transfer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff.svg)](https://vite.dev/)
