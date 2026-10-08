@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { useDiscovery } from '../composables/useDiscovery'
 
 const {
   settings,
@@ -14,6 +15,7 @@ const {
   chooseDirectory,
   clearDirectory
 } = useSettings()
+const { rename, refresh } = useDiscovery()
 
 const dialogEl = ref<HTMLDialogElement | null>(null)
 
@@ -36,6 +38,9 @@ watch(dialogOpen, (open) => {
 
 function onSave(): void {
   saveSettings()
+  rename(settings.name)
+  // 服务地址可能改了，重新探测一次（没改也会很快重连）
+  void refresh()
   closeSettings()
 }
 </script>
@@ -48,6 +53,15 @@ function onSave(): void {
       <label class="field">
         <span>我的昵称</span>
         <input v-model="settings.name" type="text" maxlength="24" placeholder="例如：小明" />
+      </label>
+
+      <label class="field">
+        <span>发现服务地址（留空 = 使用当前站点）</span>
+        <input
+          v-model="settings.serverUrl"
+          type="text"
+          placeholder="例如：192.168.1.5:8080；单文件版填这里才能自动发现用户"
+        />
       </label>
 
       <label class="field">
@@ -88,8 +102,8 @@ function onSave(): void {
       </label>
 
       <p class="hint">
-        提示：默认不配置任何外部服务器，双方在同一局域网内即可直连；文件通过 DataChannel 点对点传输，
-        不落地到任何第三方。
+        提示：由 <code>pnpm lan</code>（server/index.mjs）托管的页面会自动发现局域网内的其他用户，
+        点选即可请求连接，对方同意后建立直连。文件与聊天内容始终走点对点，不经过服务器。
       </p>
 
       <div class="settings-foot">

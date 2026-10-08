@@ -129,4 +129,6 @@ export interface AppSettings {
   autoAccept: boolean
   stun: boolean
   stunUrl: string
+  /** 发现/信令服务地址；留空表示使用当前站点（由 server/index.mjs 托管时） */
+  serverUrl: string
 }

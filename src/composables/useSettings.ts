@@ -18,7 +18,8 @@ const settings = reactive<AppSettings>({
   saveMode: supportsFileSystemAccess() ? 'ask' : 'download',
   autoAccept: false,
   stun: false,
-  stunUrl: 'stun:stun.l.google.com:19302'
+  stunUrl: 'stun:stun.l.google.com:19302',
+  serverUrl: ''
 })
 
 /** 设置弹窗开关 */
@@ -47,6 +48,7 @@ export function loadSettings(): void {
     settings.autoAccept = !!saved.autoAccept
     settings.stun = !!saved.stun
     if (saved.stunUrl) settings.stunUrl = saved.stunUrl
+    settings.serverUrl = saved.serverUrl || ''
   } catch (e) {
     addLog(`读取本地设置失败（${e instanceof Error ? e.message : String(e)}），使用默认设置`, 'warn')
   }

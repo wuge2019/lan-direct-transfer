@@ -602,6 +602,7 @@ export function usePeer() {
     sendChat,
     sendFiles,
     clearChat,
+    sysMessage,
     // 文件
     acceptTransfer,
     rejectTransfer,

@@ -12,6 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "useDefineForClassFields": true,
     "isolatedModules": true,
+    "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,

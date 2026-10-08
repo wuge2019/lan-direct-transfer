@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import TopBar from './components/TopBar.vue'
+import PeerList from './components/PeerList.vue'
 import ConnectPanel from './components/ConnectPanel.vue'
 import SessionPanel from './components/SessionPanel.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
+import RequestDialog from './components/RequestDialog.vue'
 import LogPanel from './components/LogPanel.vue'
 import ToastHost from './components/ToastHost.vue'
 import { usePeer } from './composables/usePeer'
+import { useDiscovery } from './composables/useDiscovery'
 
 const { sendFiles, hasActiveTransfer } = usePeer()
+const { init: initDiscovery, shutdown: shutdownDiscovery } = useDiscovery()
 
 const dragActive = ref(false)
 let dragDepth = 0
@@ -67,6 +71,7 @@ onMounted(() => {
   window.addEventListener('dragend', resetDrag)
   window.addEventListener('blur', resetDrag)
   window.addEventListener('beforeunload', onBeforeUnload)
+  void initDiscovery()
 })
 
 onBeforeUnmount(() => {
@@ -77,13 +82,20 @@ onBeforeUnmount(() => {
   window.removeEventListener('dragend', resetDrag)
   window.removeEventListener('blur', resetDrag)
   window.removeEventListener('beforeunload', onBeforeUnload)
+  shutdownDiscovery()
 })
 </script>
 
 <template>
   <TopBar />
   <main class="layout">
-    <ConnectPanel />
+    <div class="side-column">
+      <PeerList />
+      <details class="manual-panel">
+        <summary>手动连接（没有发现服务时，交换邀请码）</summary>
+        <ConnectPanel />
+      </details>
+    </div>
     <SessionPanel />
     <LogPanel />
   </main>
@@ -95,6 +107,7 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
+  <RequestDialog />
   <SettingsDialog />
   <ToastHost />
 </template>

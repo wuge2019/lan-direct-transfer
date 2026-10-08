@@ -15,6 +15,8 @@ import { JSDOM } from 'jsdom'
 import App from '../src/App.vue'
 import { usePeer } from '../src/composables/usePeer'
 import { useToast } from '../src/composables/useToast'
+import { useSettings } from '../src/composables/useSettings'
+import { useDiscovery } from '../src/composables/useDiscovery'
 import type { TransferView } from '../src/lib/types'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -30,17 +32,40 @@ function mountApp(): HTMLElement {
   return container
 }
 
-afterEach(() => {
+const cleanups: Array<() => void | Promise<void>> = []
+
+afterEach(async () => {
   mounted?.unmount()
   mounted = null
   document.body.innerHTML = ''
+  while (cleanups.length) {
+    const cleanup = cleanups.pop()
+    if (cleanup) await cleanup()
+  }
   // 模块级单例状态是跨用例共享的，手动清理
   const { messages, transfers } = usePeer()
   messages.splice(0, messages.length)
   transfers.splice(0, transfers.length)
   const { toasts } = useToast()
   toasts.splice(0, toasts.length)
+  const discovery = useDiscovery()
+  discovery.roster.value = []
+  discovery.discoveryStatus.value = 'idle'
+  discovery.serverInfo.value = null
+  discovery.selfPeerId.value = ''
+  useSettings().settings.serverUrl = ''
 })
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function waitUntil(check: () => boolean, timeout = 8000, label = '条件'): Promise<void> {
+  const start = Date.now()
+  while (Date.now() - start < timeout) {
+    if (check()) return
+    await sleep(25)
+  }
+  throw new Error(`等待超时：${label}`)
+}
 
 function makeTransferView(partial: Partial<TransferView>): TransferView {
   return {
@@ -80,12 +105,22 @@ describe('界面渲染（App.vue）', () => {
     const el = mountApp()
     const text = el.textContent || ''
     expect(text).toContain('局域网直连')
+    expect(text).toContain('局域网用户')
+    expect(text).toContain('我的昵称')
     expect(text).toContain('建立连接')
     expect(text).toContain('生成邀请码')
     expect(text).toContain('完成连接')
     expect(text).toContain('通信与文件传输')
     expect(text).toContain('还没有建立连接')
     expect(text).toContain('运行日志')
+  })
+
+  it('没有发现服务时给出可操作的提示，并保留手动连接入口', async () => {
+    const el = mountApp()
+    await waitUntil(() => (el.textContent || '').includes('没有找到发现服务'), 8000, '探测结束')
+    const text = el.textContent || ''
+    expect(text).toContain('pnpm lan')
+    expect(text).toContain('手动连接')
   })
 
   it('初始状态显示“未连接”，断开按钮不可点', () => {
@@ -259,4 +294,72 @@ describe.skipIf(!distExists)('单文件构建产物（dist/index.html）', () =>
 
     dom.window.close()
   })
+})
+
+describe('界面 + 发现服务状态渲染', () => {
+  // 说明：这里不启动真实 WebSocket 服务。
+  // vitest 的 jsdom 环境会把全局 Event 换成 jsdom 实现，而 Node 自带的 WebSocket
+  // 在派发事件时要求 Node 原生 Event，两者混用会在派发 open 事件时抛错
+  // （属于测试环境冲突，不是应用代码问题）。因此：
+  //   - 协议与真实连接由 tests/discovery.spec.ts、tests/full-stack.spec.ts 在 node 环境覆盖
+  //   - 这里只验证 Vue 层拿到「在线名单」后的渲染与交互
+  it('拿到在线名单后能渲染出用户、在线人数与可用的连接按钮', async () => {
+    const { roster, discoveryStatus, serverInfo, selfPeerId } = useDiscovery()
+    const { settings } = useSettings()
+    settings.serverUrl = 'http://127.0.0.1:1' // 让自动探测快速失败，不影响下面注入的状态
+    const el = mountApp()
+    await waitUntil(() => (el.textContent || '').includes('没有找到发现服务'), 10000, '探测结束')
+
+    // 注入一份「已连上发现服务、名单里有小红」的状态
+    selfPeerId.value = 'me'
+    discoveryStatus.value = 'online'
+    serverInfo.value = {
+      app: 'lan-direct-transfer',
+      protocol: 1,
+      version: '1.0.0',
+      serverName: '渲染测试房',
+      peers: 2,
+      urls: ['http://192.168.1.5:8080']
+    }
+    roster.value = [
+      { peerId: 'me', name: '我', busy: false },
+      { peerId: 'other', name: '小红', busy: false }
+    ]
+    await nextTick()
+
+    const text = el.textContent || ''
+    expect(text).toContain('渲染测试房')
+    expect(text).toContain('小红')
+    expect(text).toContain('1 人在线')
+    expect(text).toContain('空闲')
+
+    const connectButton = Array.from(el.querySelectorAll('button')).find((b) => b.textContent === '连接')
+    expect(connectButton).toBeTruthy()
+    expect((connectButton as HTMLButtonElement).disabled).toBe(false)
+
+    // 邀请区应该带上加入地址与二维码组件
+    const invite = el.querySelector('details.invite-box')
+    expect(invite).toBeTruthy()
+    expect(invite?.textContent).toContain('http://192.168.1.5:8080')
+
+    // 忙碌中的用户不能点连接
+    roster.value = [
+      { peerId: 'me', name: '我', busy: false },
+      { peerId: 'other', name: '小红', busy: true }
+    ]
+    await nextTick()
+    const busyButton = Array.from(el.querySelectorAll('button')).find((b) => b.textContent === '连接')
+    expect((busyButton as HTMLButtonElement).disabled).toBe(true)
+    expect(el.textContent).toContain('连接中')
+  }, 40000)
+
+  it('服务地址不可用时退化为手动模式，不影响其它功能', async () => {
+    useSettings().settings.serverUrl = 'http://127.0.0.1:1'
+    const el = mountApp()
+    await waitUntil(() => (el.textContent || '').includes('没有找到发现服务'), 10000, '探测失败提示')
+    expect(el.textContent).toContain('手动连接')
+    // 手动流程的按钮仍然可用
+    const inviteButton = Array.from(el.querySelectorAll('button')).find((b) => b.textContent === '生成邀请码')
+    expect((inviteButton as HTMLButtonElement).disabled).toBe(false)
+  }, 30000)
 })
