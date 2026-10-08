@@ -1,0 +1,61 @@
+{
+  "name": "lan-direct-transfer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "纯前端局域网通信 + 文件实时传输（WebRTC DataChannel，无后端，Vue 3 + Vite）",
+  "author": "Lyu <tomcat.888@qq.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/Lyu/lan-direct-transfer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lyu/lan-direct-transfer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lyu/lan-direct-transfer/issues"
+  },
+  "keywords": [
+    "webrtc",
+    "datachannel",
+    "p2p",
+    "lan",
+    "file-transfer",
+    "vue3",
+    "vite",
+    "no-backend",
+    "serverless",
+    "局域网",
+    "文件传输"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "vue": "^3.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^22.10.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "jsdom": "^30.1.2",
+    "node-datachannel": "^0.33.4",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.0.0",
+    "vitest": "^3.2.0",
+    "vue-tsc": "^2.1.0"
+  }
+}

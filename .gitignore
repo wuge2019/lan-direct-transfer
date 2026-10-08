@@ -1,0 +1,20 @@
+# 依赖与构建缓存
+node_modules/
+.vite/
+*.local
+*.log
+
+# 构建产物：源码仓库不提交 dist/，
+# 「双击即用」的单文件产物请从 GitHub Releases 下载（或本地 pnpm build 生成）
+dist/
+
+# 编辑器 / 系统
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# 测试与覆盖率
+coverage/
+*.tsbuildinfo
