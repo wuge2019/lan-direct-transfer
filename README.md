@@ -22,7 +22,7 @@
 技术栈：**Vue 3 + Vite + TypeScript**（Composition API、单文件组件）。
 
 > 作者：**Lyu** · 联系：**tomcat.888@qq.com** · 协议：**MIT**
-> 仓库：<https://github.com/Lyu/lan-direct-transfer>
+> 仓库：<https://github.com/wuge2019/lan-direct-transfer>
 
 ---
 
@@ -57,7 +57,7 @@
 在**任意一台**机器上（Windows / macOS / Linux 都行，只要装了 Node 18+）：
 
 ```bash
-git clone https://github.com/Lyu/lan-direct-transfer.git
+git clone https://github.com/wuge2019/lan-direct-transfer.git
 cd lan-direct-transfer
 pnpm install
 pnpm build
@@ -84,7 +84,7 @@ pnpm lan --no-open                            # 不自动打开浏览器
 
 ### 方式 B：纯前端单文件（零依赖）
 
-到 [Releases](https://github.com/Lyu/lan-direct-transfer/releases) 下载 `index.html`，
+到 [Releases](https://github.com/wuge2019/lan-direct-transfer/releases) 下载 `index.html`，
 拷贝到两台设备（U 盘 / 共享目录 / 微信），**双击用 Chrome 或 Edge 打开**，
 然后按 [3.2 手动邀请码连接](#32-手动邀请码连接无需任何服务) 交换一次信令码即可。
 产物是完全内联的普通脚本（约 180 KB），`file://` 下可直接运行，不需要任何服务。
@@ -427,7 +427,7 @@ Copyright (c) 2026 Lyu <tomcat.888@qq.com>
 
 - 作者：**Lyu**
 - 邮箱：**tomcat.888@qq.com**
-- 仓库：<https://github.com/Lyu/lan-direct-transfer>
-- 问题反馈：<https://github.com/Lyu/lan-direct-transfer/issues>
+- 仓库：<https://github.com/wuge2019/lan-direct-transfer>
+- 问题反馈：<https://github.com/wuge2019/lan-direct-transfer/issues>
 
 欢迎提交 Issue 与 Pull Request。提交前请确保 `pnpm typecheck` 与 `pnpm test` 全部通过。

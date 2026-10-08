@@ -6,13 +6,13 @@
   "description": "纯前端局域网通信 + 文件实时传输（WebRTC DataChannel，无后端，Vue 3 + Vite）",
   "author": "Lyu <tomcat.888@qq.com>",
   "license": "MIT",
-  "homepage": "https://github.com/Lyu/lan-direct-transfer#readme",
+  "homepage": "https://github.com/wuge2019/lan-direct-transfer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Lyu/lan-direct-transfer.git"
+    "url": "git+https://github.com/wuge2019/lan-direct-transfer.git"
   },
   "bugs": {
-    "url": "https://github.com/Lyu/lan-direct-transfer/issues"
+    "url": "https://github.com/wuge2019/lan-direct-transfer/issues"
   },
   "keywords": [
     "webrtc",
